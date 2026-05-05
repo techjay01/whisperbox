@@ -1,0 +1,1027 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>WhisperBox — End-to-End Encrypted Messaging</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='22' fill='%237c6af7'/><rect x='25' y='45' width='50' height='34' rx='6' fill='white'/><path d='M35 45V32a15 15 0 0 1 30 0v13' stroke='white' stroke-width='6' fill='none' stroke-linecap='round'/></svg>">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,400&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+  <!-- LOADING OVERLAY -->
+  <div id="loading-overlay" style="display:none;">
+    <div class="load-logo">
+      <svg viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2" width="22" height="22"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+      WhisperBox
+    </div>
+    <div class="load-spinner"></div>
+    <div class="load-sub" id="load-msg">Decrypting your keys…</div>
+  </div>
+
+  <!-- ══════════════════════════════════════════════
+      AUTH SCREEN
+  ══════════════════════════════════════════════════ -->
+  <div id="auth-screen">
+    <div class="auth-bg-glow"></div>
+    <div class="auth-card">
+      <div class="auth-mark">
+        <div class="auth-mark-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" width="20" height="20">
+            <rect x="3" y="11" width="18" height="11" rx="2"/>
+            <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+          </svg>
+        </div>
+        <div>
+          <div class="auth-mark-name">WhisperBox</div>
+          <div class="auth-mark-tagline">End-to-end encrypted messaging</div>
+        </div>
+      </div>
+
+      <div class="tabs">
+        <button class="tab active" id="tab-in"  onclick="authTab('in')">Sign In</button>
+        <button class="tab"        id="tab-up"  onclick="authTab('up')">Create Account</button>
+      </div>
+
+      <div class="alert alert-error" id="auth-err"></div>
+      <div class="keygen-notice" id="keygen-notice">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><path d="m21 2-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0 3 3L22 7l-3-3m-3.5 3.5L19 4"/></svg>
+        Generating your RSA-OAEP keypair locally…
+      </div>
+
+      <!-- Login form -->
+      <div id="form-in">
+        <div class="field">
+          <label>Username</label>
+          <input class="field-input" id="in-user" type="text" placeholder="your_username" autocomplete="username" spellcheck="false">
+        </div>
+        <div class="field">
+          <label>Password</label>
+          <input class="field-input" id="in-pass" type="password" placeholder="••••••••" autocomplete="current-password">
+        </div>
+        <button class="btn btn-accent" id="btn-in" onclick="doLogin()">
+          <span id="btn-in-txt">Sign In</span>
+          <span id="btn-in-spin" style="display:none"><span class="spinner"></span></span>
+        </button>
+      </div>
+
+      <!-- Register form -->
+      <div id="form-up" style="display:none">
+        <div class="field">
+          <label>Username</label>
+          <input class="field-input" id="up-user" type="text" placeholder="your_username" autocomplete="username" spellcheck="false">
+        </div>
+        <div class="field">
+          <label>Display Name</label>
+          <input class="field-input" id="up-name" type="text" placeholder="Your Name" autocomplete="name" spellcheck="false">
+        </div>
+        <div class="field">
+          <label>Password</label>
+          <input class="field-input" id="up-pass" type="password" placeholder="••••••••" autocomplete="new-password">
+        </div>
+        <div class="field">
+          <label>Confirm Password</label>
+          <input class="field-input" id="up-conf" type="password" placeholder="••••••••" autocomplete="new-password">
+        </div>
+        <button class="btn btn-accent" id="btn-up" onclick="doRegister()">
+          <span id="btn-up-txt">Create Account &amp; Generate Keys</span>
+          <span id="btn-up-spin" style="display:none"><span class="spinner"></span></span>
+        </button>
+      </div>
+
+      <div class="auth-note">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+        <span>Your private key is generated <strong>on your device</strong> and never transmitted in plaintext. The server only stores an encrypted blob it cannot read.</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════════
+      MAIN APP
+  ══════════════════════════════════════════════════ -->
+  <div id="app">
+    <div class="layout">
+
+      <!-- SIDEBAR -->
+      <div class="sidebar">
+        <div class="sidebar-head">
+          <div class="sidebar-brand">
+            <svg viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2.2" width="16" height="16"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+            WhisperBox
+            <div class="brand-dot"></div>
+          </div>
+          <button class="icon-btn" onclick="doLogout()" title="Sign out">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+          </button>
+        </div>
+
+        <div class="sidebar-me">
+          <div class="avatar av-self" id="my-av">?</div>
+          <div class="me-info">
+            <div class="me-name" id="my-name">…</div>
+            <div class="me-sub">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+              Keys loaded
+            </div>
+          </div>
+          <div class="key-chip" onclick="showKeyModal()" title="View your public key fingerprint">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m21 2-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0 3 3L22 7l-3-3m-3.5 3.5L19 4"/></svg>
+            Key
+          </div>
+        </div>
+
+        <div class="sidebar-section-label">
+          Conversations
+          <button class="icon-btn" style="width:24px;height:24px;" onclick="showNewChat()" title="New conversation">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="11" height="11"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          </button>
+        </div>
+
+        <div class="convos" id="convos-list">
+          <div style="padding:18px;text-align:center;font-size:12px;color:var(--text3);">
+            Start a new conversation
+          </div>
+        </div>
+
+        <div class="sidebar-foot">
+          <button class="btn-new" onclick="showNewChat()">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
+            New Encrypted Conversation
+          </button>
+        </div>
+
+        <div class="ws-status" id="ws-status">
+          <div class="ws-dot offline" id="ws-dot"></div>
+          <span id="ws-label">Connecting…</span>
+        </div>
+      </div>
+
+      <!-- CHAT AREA -->
+      <div class="chat">
+
+        <!-- No chat selected -->
+        <div class="no-chat" id="no-chat">
+          <div class="no-chat-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="1.5" width="26" height="26"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+          </div>
+          <h2>Zero-knowledge messaging</h2>
+          <p>Select or start a conversation. All messages are encrypted before leaving your device.</p>
+          <div class="no-chat-badge">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="12" height="12"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+            AES-256-GCM · RSA-OAEP · PBKDF2
+          </div>
+        </div>
+
+        <!-- Active chat -->
+        <div id="chat-view" style="display:none;flex-direction:column;height:100%;">
+          <div class="chat-head">
+            <div class="chat-head-left">
+              <button id="btn-back" class="icon-btn" style="display:none" onclick="closeChatMobile()">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="14" height="14"><polyline points="15 18 9 12 15 6"/></svg>
+              </button>
+              <div class="avatar" id="chat-av" style="width:38px;height:38px;font-size:13.5px;">?</div>
+              <div>
+                <div class="chat-head-name" id="chat-name">—</div>
+                <div class="chat-head-sub" id="chat-sub">End-to-end encrypted</div>
+              </div>
+            </div>
+            <div class="e2ee-badge">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+              E2EE · AES-256-GCM
+            </div>
+          </div>
+
+          <div class="enc-strip">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="11" height="11"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+            Encrypted with <strong id="enc-key-label">recipient's public key</strong> · Server stores only ciphertext · Zero plaintext access
+          </div>
+
+          <div class="msgs" id="msgs"></div>
+
+          <div class="encrypting-bar" id="enc-bar">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="12" height="12"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+            Encrypting message
+            <div class="enc-anim"><span></span><span></span><span></span></div>
+          </div>
+
+          <div class="input-area">
+            <div class="input-box">
+              <textarea
+                class="msg-input"
+                id="msg-input"
+                placeholder="Write an encrypted message…"
+                rows="1"
+                onkeydown="handleKey(event)"
+                oninput="autoResize(this)"
+              ></textarea>
+              <button class="send-btn" id="send-btn" onclick="sendMsg()" title="Encrypt and send">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="14" height="14"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+              </button>
+            </div>
+            <div class="input-hint">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+              Messages are encrypted on your device before sending · Enter to send · Shift+Enter for newline
+            </div>
+          </div>
+        </div>
+
+      </div><!-- /chat -->
+    </div><!-- /layout -->
+  </div><!-- /app -->
+
+  <!-- ══════════════════════════════════════════════
+      MODALS
+  ══════════════════════════════════════════════════ -->
+
+  <!-- New Conversation -->
+  <div class="overlay hidden" id="overlay-new">
+    <div class="modal">
+      <div class="modal-head">
+        <div class="modal-title">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+          New Conversation
+        </div>
+        <button class="icon-btn" onclick="closeOverlay('overlay-new')">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </div>
+      <div class="modal-body">
+        <div class="search-row">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+          <input id="search-input" type="text" placeholder="Search by username…" oninput="searchUsers(this.value)" autocomplete="off" spellcheck="false">
+        </div>
+        <div class="user-list" id="user-list">
+          <div class="no-results" style="color:var(--text4);">Type to search for users</div>
+        </div>
+      </div>
+      <div class="modal-foot">
+        <button class="btn-ghost" onclick="closeOverlay('overlay-new')">Cancel</button>
+        <button class="btn btn-accent" style="width:auto;padding:8px 18px;margin-top:0;" id="btn-start-chat" onclick="startChat()" disabled>
+          Open Chat
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Key Info -->
+  <div class="overlay hidden" id="overlay-key">
+    <div class="modal">
+      <div class="modal-head">
+        <div class="modal-title">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18"><path d="m21 2-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0 3 3L22 7l-3-3m-3.5 3.5L19 4"/></svg>
+          Your Encryption Keys
+        </div>
+        <button class="icon-btn" onclick="closeOverlay('overlay-key')">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </div>
+      <div class="modal-body">
+        <div class="modal-label">Public Key (RSA-OAEP 2048-bit)</div>
+        <div class="key-block" id="pub-key-display">Loading…</div>
+
+        <div class="modal-label" style="margin-top:14px;">Key Fingerprint (SHA-256)</div>
+        <div class="fingerprint-row" id="key-fingerprint">Computing…</div>
+
+        <div style="margin-top:14px;padding:12px 14px;background:var(--red-bg);border:1px solid var(--red-border);border-radius:var(--r);font-size:12px;color:var(--red);line-height:1.6;">
+          <strong>Private key status:</strong> Loaded in memory only. Never stored in plaintext. Wrapped with AES-KW (PBKDF2-derived) before server storage.
+        </div>
+
+        <div style="margin-top:12px;font-size:12px;color:var(--text2);line-height:1.6;">
+          Compare your fingerprint with your contacts out-of-band to verify no MITM attack has occurred.
+        </div>
+      </div>
+      <div class="modal-foot">
+        <button class="btn-ghost" onclick="copyPubKey()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="12" height="12"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+          Copy Public Key
+        </button>
+        <button class="btn-ghost" onclick="closeOverlay('overlay-key')">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- TOAST -->
+  <div id="toast"></div>
+
+  <script type="module">
+  import {
+    generateKeyPair, generateSalt, deriveWrappingKey,
+    wrapPrivateKey, unwrapPrivateKey,
+    exportPublicKey, importPublicKey,
+    encryptMessage, decryptMessage,
+    arrayBufferToBase64, base64ToArrayBuffer
+  } from './src/crypto/e2ee.js';
+
+  import { api } from './src/api/client.js';
+
+  // Enforce secure context — Web Crypto API requires HTTPS or localhost
+  if (!window.isSecureContext) {
+    document.body.innerHTML = `<div style="display:grid;place-items:center;height:100vh;background:#0c0c0f;color:#eeeef4;font-family:sans-serif;text-align:center;padding:2rem"><div><div style="font-size:2rem;margin-bottom:1rem">⚠️</div><h2 style="color:#7c6af7;margin-bottom:.75rem">Secure Context Required</h2><p>WhisperBox requires <strong>HTTPS</strong> or <strong>localhost</strong> to enable end-to-end encryption.</p><p style="margin-top:.5rem;color:#9898b0;font-size:13px">Open this app via a local server or an HTTPS host.</p></div></div>`;
+    throw new Error('Not a secure context — Web Crypto API unavailable.');
+  }
+
+  // ══════════════════════════════════════════════
+  // STATE
+  // ══════════════════════════════════════════════
+  const state = {
+    user: null,
+    privateKey: null,
+    publicKey: null,
+    pubKeyB64: null,           // raw base64 for display
+    conversations: new Map(),  // userId → { user, messages, loaded }
+    activeId: null,
+    publicKeyCache: new Map(), // userId → CryptoKey
+    onlineUsers: new Set(),
+    selectedNewUser: null,     // in new-chat modal
+    searchTimeout: null,
+  };
+
+  // ══════════════════════════════════════════════
+  // GLOBALS (called by inline onclick)
+  // ══════════════════════════════════════════════
+  window.authTab = authTab;
+  window.doLogin = doLogin;
+  window.doRegister = doRegister;
+  window.doLogout = doLogout;
+  window.showNewChat = showNewChat;
+  window.showKeyModal = showKeyModal;
+  window.closeOverlay = closeOverlay;
+  window.searchUsers = searchUsers;
+  window.startChat = startChat;
+  window.sendMsg = sendMsg;
+  window.handleKey = handleKey;
+  window.autoResize = autoResize;
+  window.copyPubKey = copyPubKey;
+
+  // ══════════════════════════════════════════════
+  // AUTH TAB
+  // ══════════════════════════════════════════════
+  function authTab(t) {
+    document.getElementById('form-in').style.display = t === 'in' ? '' : 'none';
+    document.getElementById('form-up').style.display = t === 'up' ? '' : 'none';
+    document.getElementById('tab-in').className = 'tab' + (t === 'in' ? ' active' : '');
+    document.getElementById('tab-up').className = 'tab' + (t === 'up' ? ' active' : '');
+    clearAuthError();
+  }
+
+  function clearAuthError() {
+    const el = document.getElementById('auth-err');
+    el.style.display = 'none'; el.textContent = '';
+  }
+
+  function showAuthError(msg) {
+    const el = document.getElementById('auth-err');
+    el.textContent = msg;
+    el.style.display = 'block';
+  }
+
+  // ══════════════════════════════════════════════
+  // REGISTER
+  // ══════════════════════════════════════════════
+  async function doRegister() {
+    clearAuthError();
+    const username    = document.getElementById('up-user').value.trim();
+    const displayName = (document.getElementById('up-name')?.value || '').trim() || username;
+    const password    = document.getElementById('up-pass').value;
+    const confirm     = document.getElementById('up-conf').value;
+
+    if (!username) return showAuthError('Username is required.');
+    if (password.length < 8) return showAuthError('Password must be at least 8 characters.');
+    if (password !== confirm) return showAuthError('Passwords do not match.');
+
+    setBtnLoading('btn-up', 'btn-up-txt', 'btn-up-spin', true);
+    document.getElementById('keygen-notice').classList.add('visible');
+
+    try {
+      // 1. Generate RSA-OAEP keypair
+      const keypair = await generateKeyPair();
+
+      // 2. Generate PBKDF2 salt
+      const salt = generateSalt();
+
+      // 3. Derive AES-KW wrapping key
+      const wrappingKey = await deriveWrappingKey(password, salt);
+
+      // 4. Wrap private key
+      const wrappedBuf = await wrapPrivateKey(keypair.privateKey, wrappingKey);
+
+      // 5. Export public key
+      const pubKeyB64 = await exportPublicKey(keypair.publicKey);
+
+      // 6. Register
+      const data = await api.register({
+        username,
+        displayName,
+        password,
+        publicKey: pubKeyB64,
+        wrappedPrivateKey: arrayBufferToBase64(wrappedBuf),
+        pbkdf2Salt: arrayBufferToBase64(salt),
+      });
+
+      // 7. Store keys in memory
+      state.privateKey = keypair.privateKey;
+      state.publicKey  = keypair.publicKey;
+      state.pubKeyB64  = pubKeyB64;
+      state.user = data.user;
+      state.publicKeyCache.set(data.user.id, keypair.publicKey);
+
+      await afterAuth();
+    } catch (err) {
+      showAuthError(err.message || 'Registration failed. Please try again.');
+    } finally {
+      setBtnLoading('btn-up', 'btn-up-txt', 'btn-up-spin', false);
+      document.getElementById('keygen-notice').classList.remove('visible');
+    }
+  }
+
+  // ══════════════════════════════════════════════
+  // LOGIN
+  // ══════════════════════════════════════════════
+  async function doLogin() {
+    clearAuthError();
+    const username = document.getElementById('in-user').value.trim();
+    const password = document.getElementById('in-pass').value;
+
+    if (!username || !password) return showAuthError('Enter your username and password.');
+
+    setBtnLoading('btn-in', 'btn-in-txt', 'btn-in-spin', true);
+    showLoading('Authenticating…');
+
+    try {
+      // 1. Login → get tokens + key blobs
+      const data = await api.login({ username, password });
+      const user = data.user;
+
+      showLoading('Deriving key…');
+
+      // 2. Re-derive wrapping key from password + stored salt
+      const salt = new Uint8Array(base64ToArrayBuffer(user.pbkdf2_salt));
+      const wrappingKey = await deriveWrappingKey(password, salt);
+
+      showLoading('Decrypting private key…');
+
+      // 3. Unwrap private key into memory
+      const wrappedBuf = base64ToArrayBuffer(user.wrapped_private_key);
+      state.privateKey = await unwrapPrivateKey(new Uint8Array(wrappedBuf), wrappingKey);
+
+      // 4. Import public key
+      state.publicKey  = await importPublicKey(user.public_key);
+      state.pubKeyB64  = user.public_key;
+      state.user = user;
+      state.publicKeyCache.set(user.id, state.publicKey);
+
+      await afterAuth();
+    } catch (err) {
+      if (err.status === 401) {
+        showAuthError('Incorrect username or password.');
+      } else if (err.message && err.message.includes('unwrap')) {
+        showAuthError('Could not decrypt your key. Wrong password?');
+      } else {
+        showAuthError(err.message || 'Login failed. Please try again.');
+      }
+      hideLoading();
+    } finally {
+      setBtnLoading('btn-in', 'btn-in-txt', 'btn-in-spin', false);
+    }
+  }
+
+  // ══════════════════════════════════════════════
+  // POST-AUTH SETUP
+  // ══════════════════════════════════════════════
+  async function afterAuth() {
+    showLoading('Loading conversations…');
+
+    // Update sidebar user info
+    document.getElementById('my-name').textContent = state.user.display_name || state.user.username;
+    document.getElementById('my-av').textContent   = initials(state.user.display_name || state.user.username);
+
+    // Load conversations
+    try {
+      const convos = await api.getConversations();
+      for (const c of convos) {
+        state.conversations.set(c.user_id, {
+          user: { id: c.user_id, username: c.username, display_name: c.display_name },
+          messages: [],
+          loaded: false,
+          lastAt: c.last_message_at,
+        });
+      }
+    } catch { /* non-fatal */ }
+
+    renderConvoList();
+
+    // Connect WebSocket
+    connectWS();
+
+    // Switch UI
+    hideLoading();
+    document.getElementById('auth-screen').style.display = 'none';
+    document.getElementById('app').style.display = 'block';
+  }
+
+  // ══════════════════════════════════════════════
+  // LOGOUT
+  // ══════════════════════════════════════════════
+  async function doLogout() {
+    try {
+      await api.logout();
+    } catch { /* best effort */ }
+
+    state.user = null;
+    state.privateKey = null;
+    state.publicKey  = null;
+    state.pubKeyB64  = null;
+    state.conversations.clear();
+    state.activeId = null;
+    state.publicKeyCache.clear();
+    state.onlineUsers.clear();
+
+    document.getElementById('app').style.display = 'none';
+    document.getElementById('auth-screen').style.display = 'flex';
+    document.getElementById('in-user').value = '';
+    document.getElementById('in-pass').value = '';
+    
+    closeChatMobile();
+  }
+
+  // ══════════════════════════════════════════════
+  // WEBSOCKET
+  // ══════════════════════════════════════════════
+  function connectWS() {
+    try {
+      api.connectWS();
+    } catch { /* no token yet */ }
+
+    api.on('ws.connected', () => {
+      document.getElementById('ws-dot').className = 'ws-dot online';
+      document.getElementById('ws-label').textContent = 'Connected · Real-time';
+    });
+
+    api.on('ws.disconnected', () => {
+      document.getElementById('ws-dot').className = 'ws-dot offline';
+      document.getElementById('ws-label').textContent = 'Reconnecting…';
+    });
+
+    api.on('message.receive', async (msg) => {
+      const fromId = msg.from_user_id;
+
+      // Ensure conversation entry exists
+      if (!state.conversations.has(fromId)) {
+        state.conversations.set(fromId, {
+          user: { id: fromId, username: fromId, display_name: fromId },
+          messages: [], loaded: true, lastAt: msg.created_at,
+        });
+        // Try refresh
+        try {
+          const convos = await api.getConversations();
+          for (const c of convos) {
+            const existing = state.conversations.get(c.user_id);
+            if (existing) {
+              existing.user = { id: c.user_id, username: c.username, display_name: c.display_name };
+            }
+          }
+        } catch { /* non-fatal */ }
+      }
+
+      const convo = state.conversations.get(fromId);
+      const decrypted = await decryptMsg(msg, false);
+      convo.messages.push(decrypted);
+      convo.lastAt = msg.created_at;
+
+      renderConvoList();
+
+      if (state.activeId === fromId) {
+        appendMessage(decrypted);
+        scrollToBottom();
+      } else {
+        showToast(`New message from ${convo.user.display_name || convo.user.username}`, 'inf');
+      }
+    });
+
+    api.on('user.online',  ({ user_id }) => { state.onlineUsers.add(user_id);    updatePresence(user_id, true);  });
+    api.on('user.offline', ({ user_id }) => { state.onlineUsers.delete(user_id); updatePresence(user_id, false); });
+
+    api.on('session.expired', () => doLogout());
+  }
+
+  function updatePresence(userId, online) {
+    if (state.activeId === userId) {
+      document.getElementById('chat-sub').textContent = online
+        ? 'Online · End-to-end encrypted'
+        : 'End-to-end encrypted';
+    }
+  }
+
+  // ══════════════════════════════════════════════
+  // CONVERSATIONS
+  // ══════════════════════════════════════════════
+  function renderConvoList() {
+    const el = document.getElementById('convos-list');
+    if (state.conversations.size === 0) {
+      el.innerHTML = `<div style="padding:18px;text-align:center;font-size:12px;color:var(--text3);">Start a new conversation</div>`;
+      return;
+    }
+
+    const sorted = [...state.conversations.entries()].sort(([,a],[,b]) => {
+      return new Date(b.lastAt || 0) - new Date(a.lastAt || 0);
+    });
+
+    el.innerHTML = sorted.map(([uid, c]) => {
+      const lastMsg = c.messages[c.messages.length - 1];
+      const name    = c.user.display_name || c.user.username || uid;
+      const preview = lastMsg
+        ? (lastMsg._decryptError
+          ? '<span style="color:var(--red);font-size:11px;">⚠ Decryption failed</span>'
+          : escapeHtml(lastMsg._plaintext || '').substring(0, 38) + (lastMsg._plaintext?.length > 38 ? '…' : ''))
+        : '<span style="color:var(--text3);font-size:11px;font-style:italic;">No messages yet</span>';
+
+      const isActive = state.activeId === uid;
+      const avClass  = avatarColorClass(name);
+
+      return `<div class="convo-item${isActive ? ' active' : ''}" onclick="openConvo('${uid}')">
+        <div class="convo-av ${avClass}">${initials(name)}</div>
+        <div class="convo-info">
+          <div class="convo-name">${escapeHtml(name)}</div>
+          <div class="convo-preview">${preview}</div>
+        </div>
+        <svg class="convo-lock" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+      </div>`;
+    }).join('');
+  }
+  window.openConvo = openConvo;
+
+  async function openConvo(userId) {
+    state.activeId = userId;
+    renderConvoList();
+
+    const convo = state.conversations.get(userId);
+    if (!convo) return;
+
+    const name    = convo.user.display_name || convo.user.username || userId;
+    const avClass = avatarColorClass(name);
+
+    document.getElementById('no-chat').style.display = 'none';
+    const cv = document.getElementById('chat-view');
+    cv.style.display = 'flex';
+
+    document.getElementById('chat-av').textContent  = initials(name);
+    document.getElementById('chat-av').className    = `avatar ${avClass}`;
+    document.getElementById('chat-name').textContent = name;
+    document.getElementById('chat-sub').textContent  = state.onlineUsers.has(userId)
+      ? 'Online · End-to-end encrypted'
+      : 'End-to-end encrypted';
+    document.getElementById('enc-key-label').textContent = `${name}'s public key`;
+
+    document.getElementById('msgs').innerHTML = '';
+
+    if (!convo.loaded) {
+      document.getElementById('msgs').innerHTML = `<div style="text-align:center;padding:20px;color:var(--text3);font-size:12px;">Loading messages…</div>`;
+      try {
+        const raw = await api.getMessages(userId, { limit: 50 });
+        const msgs = [...raw].reverse();
+        const decrypted = await Promise.all(msgs.map(m => decryptMsg(m, m.from_user_id === state.user.id)));
+        convo.messages = decrypted;
+        convo.loaded = true;
+      } catch(e) {
+        document.getElementById('msgs').innerHTML = `<div style="text-align:center;padding:20px;color:var(--red);font-size:12px;">Failed to load messages</div>`;
+        return;
+      }
+    }
+
+    renderMessages(convo.messages);
+    scrollToBottom();
+    document.getElementById('msg-input').focus();
+    openChatMobile();
+  }
+
+  // ══════════════════════════════════════════════
+  // MESSAGES RENDERING
+  // ══════════════════════════════════════════════
+  function renderMessages(messages) {
+    const el = document.getElementById('msgs');
+    el.innerHTML = '';
+
+    let lastDate = null;
+    for (const msg of messages) {
+      const d = new Date(msg.created_at);
+      const dateStr = d.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
+      if (dateStr !== lastDate) {
+        lastDate = dateStr;
+        el.insertAdjacentHTML('beforeend', `<div class="date-sep"><span>${dateStr}</span></div>`);
+      }
+      el.insertAdjacentHTML('beforeend', buildMsgHTML(msg));
+    }
+  }
+
+  function appendMessage(msg) {
+    const el = document.getElementById('msgs');
+    el.insertAdjacentHTML('beforeend', buildMsgHTML(msg));
+  }
+
+  function buildMsgHTML(msg) {
+    const isSent = msg.from_user_id === state.user.id;
+    const dir    = isSent ? 'sent' : 'received';
+    const time   = new Date(msg.created_at).toLocaleTimeString(undefined, { hour:'2-digit', minute:'2-digit' });
+
+    let bubbleContent;
+    if (msg._decryptError) {
+      bubbleContent = `<div class="msg-bubble error">⚠ Unable to decrypt this message</div>`;
+    } else {
+      bubbleContent = `<div class="msg-bubble">${escapeHtml(msg._plaintext || '').replace(/\n/g, '<br>')}</div>`;
+    }
+
+    return `<div class="msg ${dir}">
+      ${bubbleContent}
+      <div class="msg-meta">
+        <span class="msg-time">${time}</span>
+        <div class="msg-enc" title="End-to-end encrypted">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+          E2EE
+        </div>
+      </div>
+    </div>`;
+  }
+
+  function scrollToBottom() {
+    const el = document.getElementById('msgs');
+    el.scrollTop = el.scrollHeight;
+  }
+
+  // ══════════════════════════════════════════════
+  // SEND MESSAGE
+  // ══════════════════════════════════════════════
+  async function sendMsg() {
+    if (!state.activeId) return;
+    const input = document.getElementById('msg-input');
+    const text  = input.value.trim();
+    if (!text) return;
+
+    input.value = '';
+    autoResize(input);
+
+    document.getElementById('send-btn').disabled = true;
+    document.getElementById('enc-bar').classList.add('show');
+
+    try {
+      // Get recipient's public key
+      const recipientPubKey = await getPublicKey(state.activeId);
+
+      // Encrypt
+      const payload = await encryptMessage(text, recipientPubKey, state.publicKey);
+
+      // Build optimistic message
+      const optimistic = {
+        id: `local-${Date.now()}`,
+        from_user_id: state.user.id,
+        to_user_id:   state.activeId,
+        payload,
+        created_at:   new Date().toISOString(),
+        _plaintext:   text,
+        _decryptError: false,
+      };
+
+      // Send via WS or HTTP
+      if (api.isWSConnected) {
+        api.sendMessageWS({ to: state.activeId, payload });
+      } else {
+        await api.sendMessageHTTP({ to: state.activeId, payload });
+      }
+
+      // Update state
+      const convo = state.conversations.get(state.activeId);
+      if (convo) {
+        convo.messages.push(optimistic);
+        convo.lastAt = optimistic.created_at;
+      }
+
+      appendMessage(optimistic);
+      scrollToBottom();
+      renderConvoList();
+
+    } catch(err) {
+      showToast('Failed to send: ' + (err.message || 'unknown error'), 'err');
+    } finally {
+      document.getElementById('send-btn').disabled = false;
+      document.getElementById('enc-bar').classList.remove('show');
+    }
+  }
+
+  function handleKey(e) {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      sendMsg();
+    }
+  }
+
+  function autoResize(el) {
+    el.style.height = 'auto';
+    el.style.height = Math.min(el.scrollHeight, 130) + 'px';
+  }
+
+  // ══════════════════════════════════════════════
+  // DECRYPT
+  // ══════════════════════════════════════════════
+  async function decryptMsg(msg, isSentByMe) {
+    try {
+      const plaintext = await decryptMessage(msg.payload, state.privateKey, isSentByMe);
+      return { ...msg, _plaintext: plaintext, _decryptError: false };
+    } catch {
+      return { ...msg, _plaintext: null, _decryptError: true };
+    }
+  }
+
+  // ══════════════════════════════════════════════
+  // NEW CONVERSATION MODAL
+  // ══════════════════════════════════════════════
+  function showNewChat() {
+    state.selectedNewUser = null;
+    document.getElementById('search-input').value = '';
+    document.getElementById('user-list').innerHTML = `<div class="no-results" style="color:var(--text4);">Type to search for users</div>`;
+    document.getElementById('btn-start-chat').disabled = true;
+    document.getElementById('overlay-new').classList.remove('hidden');
+    setTimeout(() => document.getElementById('search-input').focus(), 100);
+  }
+
+  let searchDebounce = null;
+  async function searchUsers(q) {
+    clearTimeout(searchDebounce);
+    const el = document.getElementById('user-list');
+
+    if (!q.trim()) {
+      el.innerHTML = `<div class="no-results" style="color:var(--text4);">Type to search for users</div>`;
+      return;
+    }
+
+    el.innerHTML = `<div class="no-results">Searching…</div>`;
+
+    searchDebounce = setTimeout(async () => {
+      try {
+        const results = await api.searchUsers(q);
+        if (results.length === 0) {
+          el.innerHTML = `<div class="no-results">No users found</div>`;
+          return;
+        }
+        el.innerHTML = results.map(u => {
+          const name = u.display_name || u.username;
+          const avClass = avatarColorClass(name);
+          return `<div class="user-item" onclick="selectUser('${u.id}', '${escapeHtml(u.username)}', '${escapeHtml(u.display_name || u.username)}')" id="ui-${u.id}">
+            <div class="avatar ${avClass}" style="width:36px;height:36px;font-size:12px;">${initials(name)}</div>
+            <div>
+              <div class="user-item-name">${escapeHtml(name)}</div>
+              <div class="user-item-user">@${escapeHtml(u.username)}</div>
+            </div>
+          </div>`;
+        }).join('');
+      } catch {
+        el.innerHTML = `<div class="no-results" style="color:var(--red);">Search failed</div>`;
+      }
+    }, 300);
+  }
+  window.selectUser = selectUser;
+
+  function selectUser(id, username, displayName) {
+    state.selectedNewUser = { id, username, display_name: displayName };
+    document.querySelectorAll('.user-item').forEach(el => el.classList.remove('selected'));
+    const el = document.getElementById(`ui-${id}`);
+    if (el) el.classList.add('selected');
+    document.getElementById('btn-start-chat').disabled = false;
+  }
+
+  async function startChat() {
+    if (!state.selectedNewUser) return;
+    const user = state.selectedNewUser;
+
+    if (!state.conversations.has(user.id)) {
+      state.conversations.set(user.id, {
+        user,
+        messages: [],
+        loaded: true,
+        lastAt: null,
+      });
+    } else {
+      const existing = state.conversations.get(user.id);
+      existing.user = { ...existing.user, ...user };
+    }
+
+    closeOverlay('overlay-new');
+    renderConvoList();
+    await openConvo(user.id);
+  }
+
+  // ══════════════════════════════════════════════
+  // KEY MODAL
+  // ══════════════════════════════════════════════
+  async function showKeyModal() {
+    document.getElementById('overlay-key').classList.remove('hidden');
+    document.getElementById('pub-key-display').textContent = state.pubKeyB64 || 'Not available';
+
+    // Compute fingerprint
+    try {
+      const spki = base64ToArrayBuffer(state.pubKeyB64);
+      const hash = await crypto.subtle.digest('SHA-256', spki);
+      const hex  = Array.from(new Uint8Array(hash)).map(b => b.toString(16).padStart(2,'0')).join('');
+      const fp   = hex.match(/.{1,4}/g).join(' ').toUpperCase();
+      document.getElementById('key-fingerprint').textContent = fp;
+    } catch {
+      document.getElementById('key-fingerprint').textContent = 'Could not compute';
+    }
+  }
+
+  async function copyPubKey() {
+    try {
+      await navigator.clipboard.writeText(state.pubKeyB64 || '');
+      showToast('Public key copied to clipboard', 'ok');
+    } catch {
+      showToast('Could not copy', 'err');
+    }
+  }
+
+  // ══════════════════════════════════════════════
+  // PUBLIC KEY CACHE
+  // ══════════════════════════════════════════════
+  async function getPublicKey(userId) {
+    if (state.publicKeyCache.has(userId)) return state.publicKeyCache.get(userId);
+    const { public_key } = await api.getUserPublicKey(userId);
+    const key = await importPublicKey(public_key);
+    state.publicKeyCache.set(userId, key);
+    return key;
+  }
+
+  // ══════════════════════════════════════════════
+  // MODALS / UI HELPERS
+  // ══════════════════════════════════════════════
+  function closeOverlay(id) {
+    document.getElementById(id).classList.add('hidden');
+  }
+
+  function showLoading(msg) {
+    document.getElementById('load-msg').textContent = msg;
+    document.getElementById('loading-overlay').style.display = 'flex';
+  }
+  function hideLoading() {
+    document.getElementById('loading-overlay').style.display = 'none';
+  }
+
+  function setBtnLoading(btnId, txtId, spinId, loading) {
+    document.getElementById(btnId).disabled = loading;
+    document.getElementById(txtId).style.display = loading ? 'none' : '';
+    document.getElementById(spinId).style.display = loading ? '' : 'none';
+  }
+
+  let toastTimer;
+  function showToast(msg, type = 'ok') {
+    const el = document.getElementById('toast');
+    el.className = `toast-${type}`;
+    el.textContent = msg;
+    el.style.display = 'block';
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => { el.style.display = 'none'; }, 3200);
+  }
+
+  function openChatMobile() {
+    document.querySelector('.layout').classList.add('chat-open');
+  }
+  function closeChatMobile() {
+    document.querySelector('.layout').classList.remove('chat-open');
+  }
+  window.closeChatMobile = closeChatMobile;
+
+  // ══════════════════════════════════════════════
+  // UTILITY
+  // ══════════════════════════════════════════════
+  function initials(name = '') {
+    return name.split(/\s+/).map(w => w[0]).join('').toUpperCase().substring(0,2) || '?';
+  }
+
+  const AV_CLASSES = ['av-a','av-b','av-c','av-d','av-e'];
+  function avatarColorClass(name = '') {
+    let h = 0;
+    for (let i = 0; i < name.length; i++) h = (h * 31 + name.charCodeAt(i)) & 0xffff;
+    return AV_CLASSES[h % AV_CLASSES.length];
+  }
+
+  function escapeHtml(str = '') {
+    return String(str)
+      .replace(/&/g,'&amp;').replace(/</g,'&lt;')
+      .replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  }
+
+  // Close overlay on background click
+  document.querySelectorAll('.overlay').forEach(el => {
+    el.addEventListener('click', e => {
+      if (e.target === el) el.classList.add('hidden');
+    });
+  });
+
+  // Enter key on auth forms
+  document.getElementById('in-pass').addEventListener('keydown', e => {
+    if (e.key === 'Enter') doLogin();
+  });
+  document.getElementById('up-conf').addEventListener('keydown', e => {
+    if (e.key === 'Enter') doRegister();
+  });
+  </script>
+</body>
+</html>
