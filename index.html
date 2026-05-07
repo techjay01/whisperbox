@@ -213,10 +213,8 @@
                 id="msg-input"
                 placeholder="Write an encrypted message…"
                 rows="1"
-                onkeydown="handleKey(event)"
-                oninput="autoResize(this)"
               ></textarea>
-              <button class="send-btn" id="send-btn" onclick="sendMsg()" title="Encrypt and send">
+              <button class="send-btn" id="send-btn" title="Encrypt and send">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="14" height="14"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
               </button>
             </div>
@@ -354,6 +352,11 @@
   window.handleKey = handleKey;
   window.autoResize = autoResize;
   window.copyPubKey = copyPubKey;
+
+  // Attach msg input listeners here (module scope — inline onkeydown won't see these)
+  document.getElementById('msg-input').addEventListener('keydown', handleKey);
+  document.getElementById('msg-input').addEventListener('input', function() { autoResize(this); });
+  document.getElementById('send-btn').addEventListener('click', sendMsg);
 
   // ══════════════════════════════════════════════
   // AUTH TAB
