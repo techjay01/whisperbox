@@ -14,7 +14,7 @@
   <!-- LOADING OVERLAY -->
   <div id="loading-overlay" style="display:none;">
     <div class="load-logo">
-      <svg viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2" width="22" height="22"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+      <svg viewBox="0 0 24 24" fill="none" stroke="var(--tg-blue)" stroke-width="2" width="22" height="22"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
       WhisperBox
     </div>
     <div class="load-spinner"></div>
@@ -108,7 +108,7 @@
       <div class="sidebar">
         <div class="sidebar-head">
           <div class="sidebar-brand">
-            <svg viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2.2" width="16" height="16"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+            <svg viewBox="0 0 24 24" fill="none" stroke="var(--tg-blue)" stroke-width="2.2" width="16" height="16"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
             WhisperBox
             <div class="brand-dot"></div>
           </div>
@@ -164,7 +164,7 @@
         <!-- No chat selected -->
         <div class="no-chat" id="no-chat">
           <div class="no-chat-icon">
-            <svg viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="1.5" width="26" height="26"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+            <svg viewBox="0 0 24 24" fill="none" stroke="var(--tg-blue)" stroke-width="1.5" width="26" height="26"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
           </div>
           <h2>Zero-knowledge messaging</h2>
           <p>Select or start a conversation. All messages are encrypted before leaving your device.</p>
@@ -643,10 +643,12 @@
       return `<div class="convo-item${isActive ? ' active' : ''}" onclick="openConvo('${uid}')">
         <div class="convo-av ${avClass}">${initials(name)}</div>
         <div class="convo-info">
-          <div class="convo-name">${escapeHtml(name)}</div>
+          <div class="convo-row1">
+            <div class="convo-name">${escapeHtml(name)}</div>
+            <div class="convo-time">${c.lastAt ? fmtConvoTime(c.lastAt) : ''}</div>
+          </div>
           <div class="convo-preview">${preview}</div>
         </div>
-        <svg class="convo-lock" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
       </div>`;
     }).join('');
   }
@@ -1006,6 +1008,16 @@
     return String(str)
       .replace(/&/g,'&amp;').replace(/</g,'&lt;')
       .replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  }
+
+  function fmtConvoTime(iso) {
+    if (!iso) return '';
+    const d = new Date(iso), now = new Date();
+    const isToday = d.toDateString() === now.toDateString();
+    if (isToday) return d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    const diffDays = Math.floor((now - d) / 86400000);
+    if (diffDays < 7) return d.toLocaleDateString([], { weekday: 'short' });
+    return d.toLocaleDateString([], { day: 'numeric', month: 'short' });
   }
 
   // Close overlay on background click
