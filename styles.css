@@ -890,3 +890,79 @@ input.field-input:focus {
   .auth-card { padding: 28px 20px; width: 94vw; }
   .layout { height: 100vh; }
 }
+
+/* ══════════════════════════════════════════════════
+   LIGHT THEME — Telegram Web light style
+══════════════════════════════════════════════════ */
+html.light {
+  --tg-bg:        #ffffff;
+  --tg-sidebar:   #ffffff;
+  --tg-chat-bg:   #e6ebf5;
+  --tg-surface:   #f1f3f5;
+  --tg-surface2:  #e8eaed;
+  --tg-surface3:  #dde0e4;
+  --tg-border:    rgba(0,0,0,0.08);
+  --tg-border2:   rgba(0,0,0,0.12);
+
+  --tg-blue:      #2481cc;
+  --tg-blue2:     #1a6fb0;
+  --tg-blue-bg:   rgba(36,129,204,0.10);
+  --tg-blue-dim:  rgba(36,129,204,0.08);
+
+  --tg-bubble-out:  #effdde;
+  --tg-bubble-in:   #ffffff;
+
+  --text:    #000000;
+  --text2:   #707579;
+  --text3:   #999999;
+  --text4:   #b0b5bb;
+
+  --green:        #29a74a;
+  --green-bg:     rgba(41,167,74,0.08);
+  --green-border: rgba(41,167,74,0.18);
+  --red:          #e53935;
+  --red-bg:       rgba(229,57,53,0.07);
+  --red-border:   rgba(229,57,53,0.18);
+}
+
+html.light .msg.sent .msg-bubble {
+  color: #000;
+}
+
+html.light .msg.sent .msg-time {
+  color: rgba(36,129,204,0.65);
+}
+
+html.light .chat::before {
+  background-image: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%232481cc' fill-opacity='0.025'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+}
+
+html.light .auth-card {
+  box-shadow: 0 8px 32px rgba(0,0,0,0.12);
+}
+
+html.light .modal {
+  box-shadow: 0 8px 32px rgba(0,0,0,0.15);
+}
+
+html.light input.field-input:focus {
+  background: #fff;
+}
+
+html.light .convo-item:hover {
+  background: rgba(0,0,0,0.04);
+}
+
+html.light .convo-item.active {
+  background: rgba(36,129,204,0.1);
+}
+
+html.light .msg.received .msg-bubble {
+  border: 1px solid rgba(0,0,0,0.06);
+  box-shadow: 0 1px 2px rgba(0,0,0,0.08);
+}
+
+html.light .date-sep::before,
+html.light .date-sep::after {
+  background: rgba(0,0,0,0.1);
+}
