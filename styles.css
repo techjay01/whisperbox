@@ -111,6 +111,7 @@ body {
   border-radius: 50%;
   display: flex; align-items: center; justify-content: center;
   flex-shrink: 0;
+  box-shadow: 0 8px 24px rgba(46,166,255,0.3);
 }
 
 .auth-mark-name {
@@ -338,6 +339,9 @@ input.field-input:focus {
   flex-shrink: 0;
   font-family: var(--font);
   letter-spacing: -0.2px;
+  line-height: 1;
+  text-align: center;
+  user-select: none;
 }
 .av-self  { width:42px; height:42px; background: linear-gradient(135deg, #2ea6ff, #1a6fb0); color: #fff; }
 .av-a     { background: linear-gradient(135deg, #7c6af7, #5246b5); color: #fff; }
@@ -398,6 +402,9 @@ input.field-input:focus {
   flex-shrink: 0;
   font-family: var(--font);
   color: #fff;
+  line-height: 1;
+  text-align: center;
+  user-select: none;
 }
 
 .convo-info { flex: 1; min-width: 0; }

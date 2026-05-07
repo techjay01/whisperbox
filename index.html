@@ -711,10 +711,13 @@
     let lastDate = null;
     for (const msg of messages) {
       const d = new Date(msg.created_at);
+      const now = new Date();
+      const isToday = d.toDateString() === now.toDateString();
       const dateStr = d.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
+      const dateLabel = isToday ? 'Today' : dateStr;
       if (dateStr !== lastDate) {
         lastDate = dateStr;
-        el.insertAdjacentHTML('beforeend', `<div class="date-sep"><span>${dateStr}</span></div>`);
+        el.insertAdjacentHTML('beforeend', `<div class="date-sep"><span>${dateLabel}</span></div>`);
       }
       el.insertAdjacentHTML('beforeend', buildMsgHTML(msg));
     }
