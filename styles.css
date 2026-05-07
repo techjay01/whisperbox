@@ -951,3 +951,59 @@ html.light .date-sep::after {
   border-radius: 4px;
 }
 .eye-btn:hover { color: var(--text2); }
+
+/* ── Feature 3: Scroll-to-bottom button ─────────── */
+.scroll-btn {
+  position: absolute;
+  bottom: 80px;
+  right: 16px;
+  width: 36px; height: 36px;
+  background: var(--tg-surface2);
+  border: 1px solid var(--tg-border2);
+  border-radius: 50%;
+  color: var(--text2);
+  cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.3);
+  transition: var(--t);
+  z-index: 10;
+}
+.scroll-btn:hover { background: var(--tg-surface3); color: var(--text); transform: scale(1.05); }
+
+/* ── Feature 1: Typing indicator ────────────────── */
+.typing-text { color: var(--tg-blue); font-style: italic; }
+.typing-dots span {
+  display: inline-block;
+  animation: typingBlink 1.2s infinite;
+  font-style: normal;
+}
+.typing-dots span:nth-child(2) { animation-delay: 0.2s; }
+.typing-dots span:nth-child(3) { animation-delay: 0.4s; }
+@keyframes typingBlink {
+  0%, 80%, 100% { opacity: 0.2; }
+  40% { opacity: 1; }
+}
+
+/* ── Feature 4: Empty conversation state ────────── */
+.empty-convo {
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  flex: 1; height: 100%;
+  gap: 12px;
+  color: var(--text3);
+  text-align: center;
+  padding: 40px 24px;
+}
+.empty-convo-icon {
+  width: 52px; height: 52px;
+  background: var(--tg-blue-bg);
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  color: var(--tg-blue);
+  border: 1px solid rgba(46,166,255,0.15);
+}
+.empty-convo p {
+  font-size: 13px; line-height: 1.7;
+  max-width: 220px;
+  color: var(--text3);
+}
